@@ -11,24 +11,26 @@ const users = [
     firstName: 'Jurgen',
     lastName:  'Hasmeta',
     userName:  'avenger22',
+    gender:     'M',
     birthday:  '22/12/1997',
     phoneNumber: '06933344123',
     email: 'jurgenhasmeta@email.com',
     password: bcrypt.hashSync("jurgen123", 8),
-    createdAt: 'eoje',
-    updatedAt: 'eo'
+    createdAt: '"2020-03-18T14:21:00+02:00"',
+    updatedAt: '"2021-03-18T14:21:00+02:00"'
   },
   {
-    id: 1,
+    id: 2,
     firstName: 'Egon',
     lastName:  'Loli',
     userName:  'egon12',
+    gender:     'M',
     birthday:  '20/11/1996',
     phoneNumber: '06723344123',
     email: 'egonloli@email.com',
     password: bcrypt.hashSync("egon123", 8),
-    createdAt: 'eoje',
-    updatedAt: 'eo'
+    createdAt: '"2018-01-18T14:21:00+02:00"',
+    updatedAt: '"2022-03-18T14:21:00+02:00"'
   }
 ]
 
@@ -36,22 +38,19 @@ const logins = [
   {
     id: 1,
     status: "succes",
-    createdAt: "ojejo",
-    updatedAt: "je",
+    createdAt: "2021-03-18T14:21:00+02:00",
     userId: 1
   },
   {
     id: 2,
     status: "success",
-    createdAt: "ojejo",
-    updatedAt: "je",
+    createdAt: "2020-02-18T14:21:00+02:00",
     userId: 1
   },
   {
-    id: 1,
+    id: 3,
     status: "success",
-    createdAt: "ojejo",
-    updatedAt: "je",
+    createdAt: "2018-01-18T14:21:00+02:00",
     userId: 2
   }
 ]
@@ -62,8 +61,8 @@ const avatars = [
     height: 250,
     width: 55,
     src: "item1.jpg",
-    createdAt: "jo",
-    updatedAt: "90",
+    createdAt: "2020-05-18T14:21:00+02:00",
+    updatedAt: "2020-07-18T14:21:00+02:00",
     userId: 1
   },
   {
@@ -71,8 +70,8 @@ const avatars = [
     height: 250,
     width: 55,
     src: "item2.jpg",
-    createdAt: "jo",
-    updatedAt: "90",
+    createdAt: "2010-05-18T14:21:00+02:00",
+    updatedAt: "2020-07-18T14:21:00+02:00",
     userId: 2
   }
 ]
@@ -83,8 +82,8 @@ const photos = [
     caption: "vacation in bahamas",
     height: 500,
     width: 555,
-    createdAt: "jo",
-    updatedAt: "90",
+    createdAt: "2020-05-18T14:21:00+02:00",
+    updatedAt: "2020-07-18T14:21:00+02:00",
     src: "item1.jpg",
     userId: 1
   },
@@ -93,8 +92,8 @@ const photos = [
     caption: "vacation in durres",
     height: 500,
     width: 555,
-    createdAt: "jo",
-    updatedAt: "90",
+    createdAt: "2020-08-18T14:21:00+02:00",
+    updatedAt: "2020-07-18T14:21:00+02:00",
     src: "item1.jpg",
     userId: 2
   },
@@ -103,8 +102,8 @@ const photos = [
     caption: "vacation in kosova",
     height: 500,
     width: 555,
-    createdAt: "jo",
-    updatedAt: "90",
+    createdAt: "2020-02-18T14:21:00+02:00",
+    updatedAt: "2020-08-18T14:21:00+02:00",
     src: "item1.jpg",
     userId: 1
   }
@@ -114,16 +113,16 @@ const comments = [
   {
     id: 1,
     content: "hi i am jurgen",
-    createdAt: "jo",
-    updatedAt: "393",
+    createdAt: "2020-01-18T14:21:00+02:00",
+    updatedAt: "2020-02-18T14:21:00+02:00",
     userId: 1,
     photoId: 2
   },
   {
     id: 2,
     content: "hi i am egon",
-    createdAt: "jo",
-    updatedAt: "393",
+    createdAt: "2020-08-18T14:21:00+02:00",
+    updatedAt: "2020-09-18T14:21:00+02:00",
     userId: 2,
     photoId: 1
   }
@@ -132,15 +131,15 @@ const comments = [
 const commentLikes = [
   {
     id: 1,
-    createdAt: "jo",
-    updatedAt: "393",
+    createdAt: "2020-05-18T14:21:00+02:00",
+    updatedAt: "2020-06-18T14:21:00+02:00",
     userId: 1,
     commentId: 2
   },
   {
     id: 2,
-    createdAt: "jo",
-    updatedAt: "393",
+    createdAt: "2020-09-18T14:21:00+02:00",
+    updatedAt: "2020-10-18T14:21:00+02:00",
     userId: 2,
     commentId: 1
   }
@@ -149,15 +148,15 @@ const commentLikes = [
 const photoLikes = [
   {
     id: 1,
-    createdAt: "jo",
-    updatedAt: "393",
+    createdAt: "2020-02-18T14:21:00+02:00",
+    updatedAt: "2020-08-18T14:21:00+02:00",
     userId: 1,
     photoId: 2
   },
   {
     id: 2,
-    createdAt: "jo",
-    updatedAt: "393",
+    createdAt: "2020-09-18T14:21:00+02:00",
+    updatedAt: "2020-11-18T14:21:00+02:00",
     userId: 2,
     photoId: 1
   }
@@ -165,8 +164,8 @@ const photoLikes = [
 
 async function createStuff () {
 
-  await prisma.commentlike.deleteMany()
-  await prisma.postlike.deleteMany()
+  await prisma.commentLike.deleteMany()
+  await prisma.photoLike.deleteMany()
   await prisma.login.deleteMany()
   await prisma.avatar.deleteMany()
   await prisma.comment.deleteMany()

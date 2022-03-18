@@ -20,8 +20,8 @@ model User {
   phoneNumber String
   email       String        @unique
   password    String
-  createdAt   DateTime
-  updatedAt   DateTime
+  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
+  updatedAt   DateTime      @default("2022-03-18T14:21:00+02:00")
   logins      Login[]
   avatar      Avatar[]
   photos      Photo[]
@@ -33,13 +33,13 @@ model User {
 model Photo {
   id          Int           @id @default(autoincrement())
   caption     String        
-  height      Float
-  width       Float
-  createdAt   DateTime
-  updatedAt   DateTime
+  height      Int           @default(250)
+  width       Int           @default(250)
+  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
+  updatedAt   DateTime      @default("2020-03-18T14:21:00+02:00")
   src         String
   userId      Int
-  userWhoCreatedIt  User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userWhoCreatedIt  User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   comments    Comment[]
   usersWhoLikedIt PhotoLike[]
 }
@@ -47,8 +47,8 @@ model Photo {
 model Comment {
   id          Int           @id @default(autoincrement())
   content     String        
-  createdAt   DateTime
-  updatedAt   DateTime
+  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
+  updatedAt   DateTime      @default("2020-03-18T14:21:00+02:00")
   userId      Int
   photoId     Int
   photo       Photo         @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -59,27 +59,26 @@ model Comment {
 model Login {
   id          Int           @id @default(autoincrement())
   status      String        
-  createdAt   DateTime
-  updatedAt   DateTime
+  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
   userId      Int
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Avatar {
-  id          Int           @id @default(autoincrement())
-  height      Float        
-  width       Float
+  id          Int          @id @default(autoincrement())
+  height      Int        @default(50)
+  width       Int        @default(50)
   src         String
-  createdAt   DateTime
-  updatedAt   DateTime
+  createdAt   DateTime     @default("2020-03-18T14:21:00+02:00")
+  updatedAt   DateTime     @default("2020-03-18T14:21:00+02:00")
   userId      Int          @unique
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model CommentLike {
   id        Int         @id @default(autoincrement())
-  createdAt DateTime    
-  updatedAt DateTime   
+  createdAt DateTime    @default("2020-03-18T14:21:00+02:00")
+  updatedAt DateTime    @default("2020-03-18T14:21:00+02:00")
   userId    Int
   commentId Int
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -88,8 +87,8 @@ model CommentLike {
 
 model PhotoLike {
   id        Int         @id @default(autoincrement())
-  createdAt DateTime    
-  updatedAt DateTime   
+  createdAt DateTime    @default("2020-03-18T14:21:00+02:00")
+  updatedAt DateTime    @default("2020-03-18T14:21:00+02:00")
   userId    Int
   photoId   Int
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
