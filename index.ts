@@ -117,16 +117,22 @@ app.get('/users', async (req, res) => {
   try {
 
     const users = await prisma.user.findMany({
-      include: { photos: true, logins: true, 
+      include: { 
+        photos: true, logins: true, 
         comments:true, 
         avatar: true, 
         commentsLiked: { include: {comment: true} },
         photosLiked:  { include: { photo: true} },
-        //@ts-ignore
         followedBy: { include: { follower: true } },
         following:  { include: { following: true } }
       }
     })
+
+    // const numberOfCommentsCreated = 0 
+    // const numberOfCommentsLiked = 0
+    // const numberOfPhotosLikes = 0
+    // const numberOfFollowers = 0 
+    // const numberOfFollowing = 0
 
     res.send(users)
 
@@ -147,12 +153,12 @@ app.get('/users/:id', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: { id: idParam },
-      include: { photos: true, logins: true, 
+      include: { 
+        photos: true, logins: true, 
         comments:true, 
         avatar: true, 
         commentsLiked: { include: {comment: true} },
         photosLiked:  { include: { photo: true} },
-        //@ts-ignore
         followedBy: { include: { follower: true } },
         following:  { include: { following: true } }
       }
@@ -217,8 +223,24 @@ app.post('/users', async (req, res) => {
     else {
 
       try {
+
         const createdUser = await prisma.user.create({data: newUser})
-        res.send({ createdUser, token: createToken(createdUser.id) } )
+        
+        const getFullUser = await prisma.user.findFirst({ 
+          where: {id: createdUser.id}, 
+          include: { 
+          photos: true, logins: true, 
+          comments:true, 
+          avatar: true, 
+          commentsLiked: { include: {comment: true} },
+          photosLiked:  { include: { photo: true} },
+          followedBy: { include: { follower: true } },
+          following:  { include: { following: true } }
+        } 
+      })
+
+        res.send({ getFullUser, token: createToken(createdUser.id) } )
+      
       }
 
       catch(error) {
@@ -247,18 +269,37 @@ app.delete('/users/:id', async (req, res) => {
     // check that they are signed in
     const user = await getUserFromToken(token)
 
-    if (user) {
+    //@ts-ignore
+    const belongsToUser = await prisma.user.findFirst({where: {id: Number(idParam)}})
+    
+    //@ts-ignore
+    const result = belongsToUser.id === user.id
+    
+    if (user && result) {
 
       await prisma.user.delete({ 
         where: { id: Number(idParam) }
       })
 
-      res.send(user)
+      const users = await prisma.user.findMany({
+        include: { 
+        photos: true, logins: true, 
+        comments:true, 
+        avatar: true, 
+        commentsLiked: { include: {comment: true} },
+        photosLiked:  { include: { photo: true} },
+        followedBy: { include: { follower: true } },
+        following:  { include: { following: true } }
+      } 
+    })
+
+
+      res.send(users)
 
     }
 
     else {
-      res.status(404).send({ error: 'user not found.' })
+      res.status(404).send({ error: 'user not found or you cant delete this user.' })
     }
 
   }
@@ -322,7 +363,20 @@ app.patch('/users/:id', async (req, res) => {
 
         })
 
-        res.send(user)
+        const userFull = await prisma.user.findFirst({
+          where: {id: user.id},
+          include: { 
+          photos: true, logins: true, 
+          comments:true, 
+          avatar: true, 
+          commentsLiked: { include: {comment: true} },
+          photosLiked:  { include: { photo: true} },
+          followedBy: { include: { follower: true } },
+          following:  { include: { following: true } }
+        } 
+      })
+
+        res.send(userFull)
 
       } 
   
@@ -430,13 +484,26 @@ app.post('/photos', async (req, res) => {
     const user = await getUserFromToken(token)
 
     //@ts-ignore
-    const photoCheck = await prisma.photo.findFirst({ where: { userId: user.id }} )
+    // const photoCheck = await prisma.photo.findFirst({ where: { userId: user.id }} )
     
-    if (photoCheck) {
+    if (user) {
 
       try {
+
         const createdPhoto = await prisma.photo.create({data: newPhoto})
-        res.send(createdPhoto)
+        
+        const createdPhotoFull = await prisma.photo.findFirst({
+          where: { id: createdPhoto.id },
+          include: { 
+          userWhoCreatedIt: true, 
+          comments: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+          }  
+
+        })
+
+        res.send(createdPhotoFull)
+
       }
 
       catch(error) {
@@ -447,7 +514,7 @@ app.post('/photos', async (req, res) => {
     }
 
     else {
-      res.status(404).send({ error: 'photo does not belong to this user.' })
+      res.status(404).send({ error: 'User is not logged in no auth.' })
     }
 
 
@@ -539,17 +606,27 @@ app.patch('/photos/:id', async (req, res) => {
 
       try {
 
-        const order = await prisma.photo.update({
+        const photo = await prisma.photo.update({
 
           where: {
-            id: user.id,
+            id: user.id
           },
 
           data: updatedPhoto
 
         })
 
-        res.send(order)
+        const photoFull = await prisma.photo.findFirst({ 
+          where: { id: photo.id },
+          include: { 
+          userWhoCreatedIt: true, 
+          comments: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+          } 
+
+        })
+
+        res.send(photoFull)
 
       }
 
@@ -655,13 +732,25 @@ app.post('/comments', async (req, res) => {
     const user = await getUserFromToken(token)
 
     //@ts-ignore
-    const commentCheck = await prisma.comment.findFirst({ where: { userId: user.id }} )
+    // const commentCheck = await prisma.comment.findFirst({ where: { userId: user.id }} )
     
-    if (commentCheck) {
+    if (user) {
 
       try {
+
         const createdComment = await prisma.comment.create({data: newComment})
-        res.send(createdComment)
+        
+        const createdCommentFull = await prisma.comment.findFirst({
+          where: { id: createdComment.id },
+          include: { 
+          photo: true, 
+          userWhoCreatedIt: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+          } 
+        })
+
+        res.send(createdCommentFull)
+
       }
 
       catch(error) {
@@ -672,7 +761,7 @@ app.post('/comments', async (req, res) => {
     }
 
     else {
-      res.status(404).send({ error: 'comment doesnt belong to this user' })
+      res.status(404).send({ error: 'user is not authorized for this' })
     }
 
 
@@ -769,7 +858,16 @@ app.patch('/comments/:id', async (req, res) => {
 
         })
 
-        res.send(commentUpdated)
+        const commentUpdatedFull = await prisma.comment.findFirst({ 
+          where: { id: commentUpdated.id },
+          include: { 
+          photo: true, 
+          userWhoCreatedIt: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+          } 
+        })
+
+        res.send(commentUpdatedFull)
 
       }
 
@@ -864,13 +962,21 @@ app.post('/logins', async (req, res) => {
     const user = await getUserFromToken(token)
 
     //@ts-ignore
-    const loginCheck = await prisma.login.findFirst({ where: { userId: user.id }} )
+    // const loginCheck = await prisma.login.findFirst({ where: { userId: user.id }} )
     
-    if (loginCheck) {
+    if (user) {
 
       try {
+
         const createdLogin = await prisma.login.create({data: newLogin})
-        res.send(createdLogin)
+        
+        const createdLoginFull = await prisma.login.findFirst({
+          where: { id: createdLogin.id },
+          include: { user: true }
+        })
+
+        res.send(createdLoginFull)
+
       }
 
       catch(error) {
@@ -881,7 +987,7 @@ app.post('/logins', async (req, res) => {
     }
 
     else {
-      res.status(404).send({ error: 'login doesnt belong to this user' })
+      res.status(404).send({ error: 'user is not authorized for this' })
     }
 
 
@@ -974,7 +1080,12 @@ app.patch('/logins/:id', async (req, res) => {
 
         })
 
-        res.send(loginUpdated)
+        const loginUpdatedFull = await prisma.login.findFirst({
+          where: { id: loginUpdated.id },
+          include: { user: true }
+        })
+
+        res.send(loginUpdatedFull)
 
       }
 
@@ -1076,13 +1187,21 @@ app.post('/avatars', async (req, res) => {
     const user = await getUserFromToken(token)
 
     //@ts-ignore
-    const avatarCheck = await prisma.avatar.findFirst({ where: { userId: user.id }} )
+    // const avatarCheck = await prisma.avatar.findFirst({ where: { userId: user.id }} )
     
-    if (avatarCheck) {
+    if (user) {
 
       try {
+
         const createdAvatar = await prisma.avatar.create({data: newAvatar})
-        res.send(createdAvatar)
+        
+        const createdAvatarFull = await prisma.avatar.findFirst({
+          where: { id: createdAvatar.id },
+          include: { user: true } 
+          })
+
+        res.send(createdAvatarFull)
+
       }
 
       catch(error) {
@@ -1093,7 +1212,7 @@ app.post('/avatars', async (req, res) => {
     }
 
     else {
-      res.status(404).send({ error: 'avatar doesnt belong to this user' })
+      res.status(404).send({ error: 'user is not authorized for this' })
     }
 
 
@@ -1126,7 +1245,7 @@ app.delete('/avatars/:id', async (req, res) => {
         where: { id: Number(idParam) }
       })
 
-      const comments = await prisma.comment.findMany( { where: { userId: user.id } } )
+      const comments = await prisma.comment.findMany( { where: { userId: user.id }, include: { userWhoCreatedIt: true, usersWhoLikedIt: { include: { user: true} }, photo: true } })
 
       // res.send(orderDeleted)
       res.send(comments)
@@ -1192,7 +1311,12 @@ app.patch('/avatars/:id', async (req, res) => {
 
         })
 
-        res.send(avatarUpdated)
+        const avatarUpdatedFull = await prisma.avatar.findFirst({
+          where: { id: avatarUpdated.id },
+          include: { user: true } 
+          })
+
+        res.send(avatarUpdatedFull)
 
       }
 
@@ -1290,13 +1414,23 @@ app.post('/commentLikes', async (req, res) => {
     const user = await getUserFromToken(token)
 
     //@ts-ignore
-    const commentLikeCheck = await prisma.commentLike.findFirst({ where: { userId: user.id }} )
+    // const commentLikeCheck = await prisma.commentLike.findFirst({ where: { userId: user.id }} )
     
-    if (commentLikeCheck) {
+    if (user) {
 
       try {
+
         const createdCommentLike = await prisma.commentLike.create({data: newCommentLike})
-        res.send(createdCommentLike)
+        
+        const createdCommentLikeFull = await prisma.commentLike.findFirst({
+          where: { id: createdCommentLike.id },
+          include: {
+            user: true, comment: true
+          }
+        })
+
+        res.send(createdCommentLikeFull)
+
       }
 
       catch(error) {
@@ -1307,7 +1441,7 @@ app.post('/commentLikes', async (req, res) => {
     }
 
     else {
-      res.status(404).send({ error: 'commentLike doesnt belong to this user' })
+      res.status(404).send({ error: 'user is not authorized for this' })
     }
 
 
@@ -1402,7 +1536,14 @@ app.patch('/commentLikes/:id', async (req, res) => {
 
         })
 
-        res.send(commentLikeUpdated)
+        const commentLikeUpdatedFull = await prisma.commentLike.findFirst({
+          where: { id: commentLikeUpdated.id },
+          include: {
+            user: true, comment: true
+          }
+        })
+
+        res.send(commentLikeUpdatedFull)
 
       }
 
@@ -1500,13 +1641,23 @@ app.post('/photoLikes', async (req, res) => {
     const user = await getUserFromToken(token)
 
     //@ts-ignore
-    const photoLikeCheck = await prisma.photoLike.findFirst({ where: { userId: user.id }} )
+    // const photoLikeCheck = await prisma.photoLike.findFirst({ where: { userId: user.id }} )
     
-    if (photoLikeCheck) {
+    if (user) {
 
       try {
+
         const createdPhotoLike = await prisma.photoLike.create({data: newPhotoLike})
-        res.send(createdPhotoLike)
+        
+        const createdPhotoLikeFull = await prisma.photoLike.findFirst({
+          where: { id: createdPhotoLike.id },
+          include: {
+            user: true, photo: true
+          }
+        })
+
+        res.send(createdPhotoLikeFull)
+        
       }
 
       catch(error) {
@@ -1517,7 +1668,7 @@ app.post('/photoLikes', async (req, res) => {
     }
 
     else {
-      res.status(404).send({ error: 'photoLike doesnt belong to this user' })
+      res.status(404).send({ error: 'user is not authorized to do this' })
     }
 
 
@@ -1612,7 +1763,14 @@ app.patch('/photoLikes/:id', async (req, res) => {
 
         })
 
-        res.send(photoLikeUpdated)
+        const photoLikeUpdatedFull = await prisma.photoLike.findFirst({
+          where: { id: photoLikeUpdated.id },
+          include: {
+            user: true, photo: true
+          }
+        })
+
+        res.send(photoLikeUpdatedFull)
 
       }
 
@@ -1713,9 +1871,19 @@ app.post('/followers', async (req, res) => {
     if (user) {
 
       try {
+
         //@ts-ignore
         const createdFollower = await prisma.follows.create({data: newFollower})
-        res.send(createdFollower)
+        
+        //@ts-ignore
+        const createdFollowerFull = await prisma.follows.findFirst({ 
+        where: { id: createdFollower.id },
+        include: 
+          { follower: true, following: true } 
+        })
+        
+        res.send(createdFollowerFull)
+
       }
 
       catch(error) {
@@ -1726,7 +1894,7 @@ app.post('/followers', async (req, res) => {
     }
 
     else {
-      res.status(404).send({ error: 'follower doesnt belong to this user' })
+      res.status(404).send({ error: 'user is not authorized to do this' })
     }
 
 
@@ -1748,12 +1916,12 @@ app.delete('/followers/:id', async (req, res) => {
 
     // check that they are signed in
     const user = await getUserFromToken(token)
-    const photoLikeMatch = await prisma.photoLike.findUnique( { where: {id: Number(idParam)} } )
+    const followerMatch = await prisma.follows.findUnique( { where: {id: Number(idParam)} } )
 
     //@ts-ignore
-    const photoLikeUserCheck = photoLikeMatch.userId === user.id
+    const followerUserCheck = followerMatch.userId === user.id
 
-    if (user && photoLikeUserCheck) {
+    if (user && followerUserCheck) {
 
       const photoLikeDeleted = await prisma.photoLike.delete({ 
         where: { id: Number(idParam) }
@@ -1801,8 +1969,13 @@ app.patch('/followers/:id', async (req, res) => {
   try {
 
     const user = await getUserFromToken(token)
+
+    const followerMatch = await prisma.follows.findUnique( { where: {id: Number(idParam)} } )
+
+    //@ts-ignore
+    const followerUserCheck = followerMatch.userId === user.id
             
-    if (user) {
+    if (user && followerUserCheck) {
 
       try {
 
@@ -1817,7 +1990,14 @@ app.patch('/followers/:id', async (req, res) => {
 
         })
 
-        res.send(followerUpdated)
+        //@ts-ignore
+        const followerUpdatedFull = await prisma.follows.findFirst({ 
+          where: { id: followerUpdated.id },
+          include: 
+            { follower: true, following: true } 
+          })
+          
+        res.send(followerUpdatedFull)
 
       }
 
