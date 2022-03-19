@@ -30,6 +30,13 @@ model User {
   photosLiked   PhotoLike[]
   followedBy    Follows[] @relation("follower")
   following     Follows[] @relation("following")
+  countPhotosCreated Int @default(0)
+  countCommentsCreated Int @default(0)
+  countCommentsLiked Int @default(0)
+  countPhotosLiked Int @default(0)
+  countLogins Int @default(0)
+  countFollowers Int @default(0)
+  countFollowing Int @default(0)
 }
 
 model Photo {

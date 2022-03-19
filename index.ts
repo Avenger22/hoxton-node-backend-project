@@ -1,7 +1,7 @@
 // #region 'Importing and configuration of Prisma'
 import express from 'express'
 import cors from 'cors'
-import { PrismaClient } from '@prisma/client'
+import {  Prisma, PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import 'dotenv/config'
@@ -128,6 +128,7 @@ app.get('/users', async (req, res) => {
       }
     })
 
+   
     // const numberOfCommentsCreated = 0 
     // const numberOfCommentsLiked = 0
     // const numberOfPhotosLikes = 0
@@ -164,8 +165,78 @@ app.get('/users/:id', async (req, res) => {
       }
     })
 
+    let countPhotosCreated = 0
+    let countCommentsCreated = 0
+    let countCommentsLiked = 0
+    let countPhotosLiked = 0
+    let countFollowers = 0
+    let countFollowing = 0
+    let countLogins = 0
+
+    //@ts-ignore
+    for (const photo of user.photos) {
+      countPhotosCreated++
+    }
+
+    //@ts-ignore
+    for (const comment of user.comments) {
+      countCommentsCreated++
+    }
+
+    //@ts-ignore
+    for (const commentLiked of user.commentsLiked) {
+      countCommentsLiked++
+    }
+
+    //@ts-ignore
+    for (const photoLiked of user.photosLiked) {
+      countPhotosLiked++
+    }
+
+    //@ts-ignore
+    for (const following of user.following) {
+      countFollowing++
+    }
+
+    //@ts-ignore
+    for (const follower of user.followedBy) {
+      countFollowers++
+    }
+
+    //@ts-ignore
+    for (const logins of user.logins) {
+      countLogins++
+    }
+
+    const updatedUserWithCounts = await prisma.user.update({
+
+      where: { id: idParam },
+
+      data: {
+        //@ts-ignore
+        countPhotosCreated: countPhotosCreated,
+        countCommentsCreated: countCommentsCreated,
+        countCommentsLiked: countCommentsLiked,
+        countPhotosLiked: countPhotosLiked,
+        countFollowers: countFollowers,
+        countFollowing: countFollowing,
+        countLogins: countLogins
+      },
+
+      include: { 
+        photos: true, logins: true, 
+        comments:true, 
+        avatar: true, 
+        commentsLiked: { include: {comment: true} },
+        photosLiked:  { include: { photo: true} },
+        followedBy: { include: { follower: true } },
+        following:  { include: { following: true } }
+      }
+
+    })
+
     if (user) {
-      res.send(user)
+      res.send(updatedUserWithCounts)
     } 
     
     else {
