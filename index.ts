@@ -28,8 +28,23 @@ async function getUserFromToken (token: string) {
   const decodedData = jwt.verify(token, process.env.MY_SECRET)
   
   // @ts-ignore
-  const user = await prisma.user.findUnique({ where: { id: decodedData.id }, include: { orders: { include: { item: true } } }})
-  return user
+  const user = await prisma.user.findUnique({ where: { id: decodedData.id }, 
+    
+    include: {
+      logins: true,
+      avatar: true,
+      photos: true,
+      comments: true, 
+      photosLiked: { include: { photo: true } }, 
+      commentsLiked: { include: { comment: true } },
+      //@ts-ignore
+      followedBy: { include: { follower: true } },
+      following: { include: { following: true } },
+    }
+
+  })
+  
+    return user
 
 }
 // #endregion
@@ -42,7 +57,19 @@ app.post('/login', async (req, res) => {
 
   try {
 
-    const user = await prisma.user.findUnique({ where: { email: email }, include: { orders: { include: {item: true} } } })
+    const user = await prisma.user.findUnique({ where: { email: email }, 
+      
+      include: {
+        logins: true,
+        avatar: true,
+        photos: true,
+        comments: true, 
+        photosLiked: { include: { photo: true } }, 
+        commentsLiked: { include: { comment: true } },
+        //@ts-ignore
+        followedBy: { include: { follower: true } },
+        following: { include: { following: true } },
+      } })
     
     // @ts-ignore
     const passwordMatches = bcrypt.compareSync(password, user.password)
@@ -90,14 +117,14 @@ app.get('/users', async (req, res) => {
   try {
 
     const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        password: true,
-        orders: { 
-          include: { item: true } 
-        } 
+      include: { photos: true, logins: true, 
+        comments:true, 
+        avatar: true, 
+        commentsLiked: { include: {comment: true} },
+        photosLiked:  { include: { photo: true} },
+        //@ts-ignore
+        followedBy: { include: { follower: true } },
+        following:  { include: { following: true } }
       }
     })
 
@@ -120,14 +147,14 @@ app.get('/users/:id', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: { id: idParam },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        password: true,
-        orders: { 
-          include: { item: true } 
-        }
+      include: { photos: true, logins: true, 
+        comments:true, 
+        avatar: true, 
+        commentsLiked: { include: {comment: true} },
+        photosLiked:  { include: { photo: true} },
+        //@ts-ignore
+        followedBy: { include: { follower: true } },
+        following:  { include: { following: true } }
       }
     })
 
@@ -150,17 +177,35 @@ app.get('/users/:id', async (req, res) => {
 
 app.post('/users', async (req, res) => {
     
-  const { email, fullName, password, userName } = req.body
+  const { 
+    firstName, 
+    lastName, 
+    userName, 
+    gender,
+    birthday,
+    phoneNumber,
+    email,
+    password,
+    createdAt,
+    updatedAt
+   } = req.body
   
   try {
 
     // generate a hash also salts the password with 8 symbols from their password
-    const hashedPassword = bcrypt.hashSync(password, 8)
+    const hashedPassword = bcrypt.hashSync(password, 15)
 
     const newUser = {
-      email: email, 
-      fullName: fullName,
-      password: hashedPassword
+      firstName: firstName, 
+      lastName: lastName,
+      userName: userName,
+      gender: gender,
+      birthday: birthday,
+      phoneNumber: phoneNumber,
+      email: email,
+      password: hashedPassword,
+      createdAt: createdAt,
+      updatedAt: updatedAt
     }
 
     const userCheck = await prisma.user.findFirst({ where: { email: newUser.email } })
@@ -227,30 +272,72 @@ app.delete('/users/:id', async (req, res) => {
 
 app.patch('/users/:id', async (req, res) => {
 
+  const token = req.headers.authorization || ''
   const idParam = req.params.id;
-  const { email, fullName, password } = req.body
-
-  const hashedPassword = bcrypt.hashSync(password, 8)
-
-  const userData = {
-    email: email,
-    fullName: fullName,
-    password: hashedPassword
-  }
-
+  
   try {
 
-    const user = await prisma.user.update({
-      where: {
-        id: Number(idParam),
-      },
-      data: userData
-    })
+    // check that they are signed in
+    const user = await getUserFromToken(token)
 
-    res.send(user)
+    if (user) {
 
-  } 
+      const { 
+        firstName, 
+        lastName, 
+        userName, 
+        gender,
+        birthday,
+        phoneNumber,
+        email,
+        password,
+        createdAt,
+        updatedAt
+      } = req.body
+
+      const hashedPassword = bcrypt.hashSync(password, 15)
+
+      const userData = {
+        firstName: firstName, 
+        lastName: lastName,
+        userName: userName,
+        gender: gender,
+        birthday: birthday,
+        phoneNumber: phoneNumber,
+        email: email,
+        password: hashedPassword,
+        createdAt: createdAt,
+        updatedAt: updatedAt
+      }
+
+      try {
+
+        const user = await prisma.user.update({
+
+          where: {
+            id: Number(idParam),
+          },
+
+          data: userData
+
+        })
+
+        res.send(user)
+
+      } 
   
+      catch(error) {
+        res.status(404).send({message: error})
+      }
+
+    }
+
+    else {
+      throw Error("Boom")
+    }
+
+  }
+
   catch(error) {
     res.status(404).send({message: error})
   }
@@ -258,12 +345,21 @@ app.patch('/users/:id', async (req, res) => {
 })
 // #endregion
 
-// #region 'orders endpoints'
-app.get('/orders', async (req, res) => {
+// #region 'photos endpoints'
+app.get('/photos', async (req, res) => {
 
   try {
-    const orders = await prisma.order.findMany( { include : {user: true, item: true} } )
-    res.send(orders)
+
+    const photos = await prisma.photo.findMany({ 
+      include: 
+        { userWhoCreatedIt: true, 
+          comments: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+        } 
+      })
+    
+      res.send(photos)
+
   }
 
   catch(error) {
@@ -273,23 +369,27 @@ app.get('/orders', async (req, res) => {
 
 })
 
-app.get('/orders/:id', async (req, res) => {
+app.get('/photos/:id', async (req, res) => {
 
   const idParam = Number(req.params.id)
 
   try {
 
-    const order = await prisma.order.findFirst({
+    const photo = await prisma.photo.findFirst({
       where: { id: idParam },
-      include : {user: true, item: true}
-    })
+      include: 
+        { userWhoCreatedIt: true, 
+          comments: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+        } 
+      })
 
-    if (order) {
-      res.send(order)
+    if (photo) {
+      res.send(photo)
     } 
     
     else {
-      res.status(404).send({ error: 'order not found.' })
+      res.status(404).send({ error: 'photo not found.' })
     }
 
   }
@@ -301,31 +401,42 @@ app.get('/orders/:id', async (req, res) => {
 
 })
 
-app.post('/orders', async (req, res) => {
+app.post('/photos', async (req, res) => {
     
   const token = req.headers.authorization || ''
-  const { quantity, userId, itemId } = req.body
   
-  const newOrder = {
-    quantity: quantity,
-    userId: userId,
-    itemId: itemId
+  const { 
+    caption, 
+    height, 
+    width, 
+    createdAt, 
+    updatedAt, 
+    src, 
+    userId 
+  } = req.body
+  
+  const newPhoto = {
+    caption: caption,
+    height: height,
+    width:  width,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    src:  src,
+    userId: userId
   }
 
   try {
 
     const user = await getUserFromToken(token)
-    const orderCheck = await prisma.order.findFirst({ where: { userId: newOrder.userId, itemId: newOrder.itemId } })
-    
-    if (orderCheck) {
-      res.status(404).send({ error: 'order has an already registered id combination try different combination.' })
-    }
 
-    else {
+    //@ts-ignore
+    const photoCheck = await prisma.photo.findFirst({ where: { userId: user.id }} )
+    
+    if (photoCheck) {
 
       try {
-        const createdOrder = await prisma.order.create({data: newOrder})
-        res.send(createdOrder)
+        const createdPhoto = await prisma.photo.create({data: newPhoto})
+        res.send(createdPhoto)
       }
 
       catch(error) {
@@ -335,6 +446,11 @@ app.post('/orders', async (req, res) => {
 
     }
 
+    else {
+      res.status(404).send({ error: 'photo does not belong to this user.' })
+    }
+
+
   }
 
   catch(error) {
@@ -344,7 +460,7 @@ app.post('/orders', async (req, res) => {
 
 })
 
-app.delete('/orders/:id', async (req, res) => {
+app.delete('/photos/:id', async (req, res) => {
 
   const token = req.headers.authorization || ''
   const idParam = req.params.id
@@ -353,26 +469,26 @@ app.delete('/orders/:id', async (req, res) => {
 
     // check that they are signed in
     const user = await getUserFromToken(token)
-    const order = await prisma.order.findUnique( { where: {id: Number(idParam)} } )
+    const photoMatch = await prisma.photo.findUnique( { where: {id: Number(idParam)} } )
 
     //@ts-ignore
-    const orderUserCheck = order.userId === user.id
+    const photoUserCheck = photoMatch.userId === user.id
 
-    if (user && orderUserCheck) {
+    if (user && photoUserCheck) {
 
-      const orderDeleted = await prisma.order.delete({ 
+      const photoDeleted = await prisma.photo.delete({ 
         where: { id: Number(idParam) }
       })
 
-      const orders = await prisma.order.findMany( { where: { userId: user.id } } )
+      const photos = await prisma.photo.findMany( { where: { userId: user.id } } )
 
       // res.send(orderDeleted)
-      res.send(orders)
+      res.send(photos)
 
     }
 
     else {
-      res.status(404).send({ error: 'order not found, or the order doesnt belong to that user to be deleted.' })
+      res.status(404).send({ error: 'photo not found, or the photo doesnt belong to that user to be deleted.' })
     }
 
   }
@@ -384,35 +500,53 @@ app.delete('/orders/:id', async (req, res) => {
 
 })
 
-app.patch('/orders/:id', async (req, res) => {
+app.patch('/photos/:id', async (req, res) => {
 
   const token = req.headers.authorization || ''
+  
   const idParam = Number(req.params.id)
-  const { quantity, userId, itemId } = req.body
+  
+  const { 
+    caption, 
+    height, 
+    width, 
+    createdAt, 
+    updatedAt, 
+    src, 
+    userId 
+  } = req.body
 
-  const orderData = {
-    quantity: quantity,
-    userId: userId,
-    itemId: itemId
+  const updatedPhoto = {
+    caption: caption,
+    height: height,
+    width:  width,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    src:  src,
+    userId: userId
   }
 
   try {
 
     const user = await getUserFromToken(token)
     
-    const orderMatch = await prisma.order.findFirst( { where: {id: idParam} } )
+    const photoMatch = await prisma.photo.findFirst( { where: {id: idParam} } )
+    
     //@ts-ignore
-    const belongsToUser = orderMatch.userId === user.id
+    const belongsToUser = photoMatch.userId === user.id
     
     if (user && belongsToUser) {
 
       try {
 
-        const order = await prisma.order.update({
+        const order = await prisma.photo.update({
+
           where: {
             id: user.id,
           },
-          data: orderData
+
+          data: updatedPhoto
+
         })
 
         res.send(order)
@@ -438,27 +572,20 @@ app.patch('/orders/:id', async (req, res) => {
 })
 // #endregion
 
-// #region "items endpoints"
-app.get('/items', async (req, res) => {
+// #region "comments endpoints"
+app.get('/comments', async (req, res) => {
 
   try {
 
-    const items = await prisma.item.findMany({
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        image: true,
-        stock: true,
-        type: true,
-        description: true,
-        orders: { 
-          include: { user: true } 
-        }
-      }
-    })
+    const comments = await prisma.comment.findMany({ 
+      include: 
+        { photo: true, 
+          userWhoCreatedIt: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+        } 
+      })
 
-    res.send(items)
+    res.send(comments)
 
   }
 
@@ -469,34 +596,29 @@ app.get('/items', async (req, res) => {
 
 })
 
-app.get('/items/:id', async (req, res) => {
+app.get('/comments/:id', async (req, res) => {
 
   const idParam = Number(req.params.id)
 
   try {
 
-    const item = await prisma.item.findFirst({
-      where: { id: idParam },
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        image: true,
-        stock: true,
-        type: true,
-        description: true,
-        orders: { 
-          include: { user: true } 
-        }
-      }
-    })
 
-    if (item) {
-      res.send(item)
+    const comment = await prisma.comment.findFirst({
+      where: { id: idParam },
+      include: 
+        { photo: true, 
+          userWhoCreatedIt: true, 
+          usersWhoLikedIt: { include: { user:true } } 
+        } 
+      })
+  
+
+    if (comment) {
+      res.send(comment)
     } 
     
     else {
-      res.status(404).send({ error: 'item not found.' })
+      res.status(404).send({ error: 'comment not found.' })
     }
 
   }
@@ -508,34 +630,38 @@ app.get('/items/:id', async (req, res) => {
 
 })
 
-app.post('/items', async (req, res) => {
+app.post('/comments', async (req, res) => {
     
   const token = req.headers.authorization || ''
-  const { name, price, image, stock, type, description } = req.body
   
-  const newItem = {
-    name:  name,
-    price: price, 
-    image: image,
-    stock: stock,
-    type: type,
-    description: description
+  const { 
+    content, 
+    createdAt, 
+    updatedAt, 
+    userId, 
+    photoId
+  } = req.body
+  
+  const newComment = {
+    content: content,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId,
+    photoId: photoId
   }
 
   try {
 
     const user = await getUserFromToken(token)
-    const itemCheck = await prisma.item.findFirst({ where: { name: newItem.name } })
-    
-    if (itemCheck) {
-      res.status(404).send({ error: 'item has an already registered name try different name.' })
-    }
 
-    else {
+    //@ts-ignore
+    const commentCheck = await prisma.comment.findFirst({ where: { userId: user.id }} )
+    
+    if (commentCheck) {
 
       try {
-        const createdItem = await prisma.item.create({data: newItem})
-        res.send(createdItem)
+        const createdComment = await prisma.comment.create({data: newComment})
+        res.send(createdComment)
       }
 
       catch(error) {
@@ -545,6 +671,11 @@ app.post('/items', async (req, res) => {
 
     }
 
+    else {
+      res.status(404).send({ error: 'comment doesnt belong to this user' })
+    }
+
+
   }
 
   catch(error) {
@@ -554,7 +685,7 @@ app.post('/items', async (req, res) => {
 
 })
 
-app.delete('/items/:id', async (req, res) => {
+app.delete('/comments/:id', async (req, res) => {
 
   const token = req.headers.authorization || ''
   const idParam = req.params.id
@@ -563,34 +694,26 @@ app.delete('/items/:id', async (req, res) => {
 
     // check that they are signed in
     const user = await getUserFromToken(token)
+    const commentMatch = await prisma.comment.findUnique( { where: {id: Number(idParam)} } )
 
-    const itemOrder = await prisma.order.findUnique({
-      where: {
-        //@ts-ignore
-        itemId: Number(idParam)
-      }
-    })
+    //@ts-ignore
+    const commentUserCheck = commentMatch.userId === user.id
 
-    const itemBelongsToUser = itemOrder?.userId === user?.id
-      
-    // const item = await prisma.item.findFirst({
-    //   where: {
-    //     id: Number(idParam)
-    //   }
-    // })
+    if (user && commentUserCheck) {
 
-    if (itemBelongsToUser && user) {
-
-      const itemDeleted = await prisma.item.delete({ 
+      const commentDeleted = await prisma.comment.delete({ 
         where: { id: Number(idParam) }
       })
 
-      res.send(itemDeleted)
+      const comments = await prisma.comment.findMany( { where: { userId: user.id } } )
+
+      // res.send(orderDeleted)
+      res.send(comments)
 
     }
 
     else {
-      res.status(404).send({ error: 'item not found or doesnt belong to that user.' })
+      res.status(404).send({ error: 'comment not found, or the comment doesnt belong to that user to be deleted.' })
     }
 
   }
@@ -602,37 +725,51 @@ app.delete('/items/:id', async (req, res) => {
 
 })
 
-app.patch('/items/:id', async (req, res) => {
+app.patch('/comments/:id', async (req, res) => {
 
   const token = req.headers.authorization || ''
-  const idParam = req.params.id;
-  const { name, price, image, stock, type, description } = req.body
+  const idParam = Number(req.params.id);
   
-  const itemData = {
-    name:  name,
-    price: price, 
-    image: image,
-    stock: stock,
-    type: type,
-    description: description
+  const { 
+    content, 
+    createdAt, 
+    updatedAt, 
+    userId, 
+    photoId
+  } = req.body
+  
+  const updatedComment = {
+    content: content,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId,
+    photoId: photoId
   }
 
   try {
 
     const user = await getUserFromToken(token)
-
-    if (user) {
+    
+    const commentMatch = await prisma.comment.findFirst( { where: {id: idParam} } )
+    
+    //@ts-ignore
+    const belongsToUser = commentMatch.userId === user.id
+    
+    if (user && belongsToUser) {
 
       try {
 
-        const item = await prisma.item.update({
+        const commentUpdated = await prisma.comment.update({
+
           where: {
-            id: Number(idParam),
+            id: user.id,
           },
-          data: itemData
+
+          data: updatedComment
+
         })
 
-        res.send(item)
+        res.send(commentUpdated)
 
       }
 
@@ -643,10 +780,433 @@ app.patch('/items/:id', async (req, res) => {
     }
 
     else {
-      throw Error("Boom")
+      throw Error('Error!')
     }
 
-  } 
+  }  
+  
+  catch(error) {
+    res.status(404).send({message: error})
+  }
+
+})
+// #endregion
+
+// #region "logins endpoints"
+app.get('/logins', async (req, res) => {
+
+  try {
+
+    const logins = await prisma.login.findMany({ 
+      include: 
+        { user: true } 
+      })
+
+    res.send(logins)
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.get('/logins/:id', async (req, res) => {
+
+  const idParam = Number(req.params.id)
+
+  try {
+
+
+    const login = await prisma.login.findFirst({
+      where: { id: idParam },
+      include: 
+        { user: true } 
+      })
+  
+    if (login) {
+      res.send(login)
+    } 
+    
+    else {
+      res.status(404).send({ error: 'login not found.' })
+    }
+
+  }
+
+  catch(error){
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.post('/logins', async (req, res) => {
+    
+  const token = req.headers.authorization || ''
+  
+  const { 
+    status, 
+    createdAt, 
+    userId, 
+  } = req.body
+  
+  const newLogin = {
+    status: status,
+    createdAt: createdAt,
+    userId: userId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+
+    //@ts-ignore
+    const loginCheck = await prisma.login.findFirst({ where: { userId: user.id }} )
+    
+    if (loginCheck) {
+
+      try {
+        const createdLogin = await prisma.login.create({data: newLogin})
+        res.send(createdLogin)
+      }
+
+      catch(error) {
+        //@ts-ignore
+        res.status(400).send(`<prev>${error.message}</prev>`)
+      }
+
+    }
+
+    else {
+      res.status(404).send({ error: 'login doesnt belong to this user' })
+    }
+
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.delete('/logins/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = req.params.id
+  
+  try {
+
+    // check that they are signed in
+    const user = await getUserFromToken(token)
+    const loginMatch = await prisma.login.findUnique( { where: {id: Number(idParam)} } )
+
+    //@ts-ignore
+    const loginUserCheck = loginMatch.userId === user.id
+
+    if (user && loginUserCheck) {
+
+      const loginDeleted = await prisma.login.delete({ 
+        where: { id: Number(idParam) }
+      })
+
+      const logins = await prisma.login.findMany( { where: { userId: user.id } } )
+
+      // res.send(orderDeleted)
+      res.send(logins)
+
+    }
+
+    else {
+      res.status(404).send({ error: 'login not found, or the login doesnt belong to that user to be deleted.' })
+    }
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.patch('/logins/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = Number(req.params.id);
+  
+  const { 
+    status, 
+    createdAt,
+    userId
+  } = req.body
+  
+  const updatedLogin = {
+    status: status,
+    createdAt: createdAt,
+    userId: userId  
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+    
+    const loginMatch = await prisma.login.findFirst( { where: {id: idParam} } )
+    
+    //@ts-ignore
+    const belongsToUser = loginMatch.userId === user.id
+    
+    if (user && belongsToUser) {
+
+      try {
+
+        const loginUpdated = await prisma.login.update({
+
+          where: {
+            id: user.id,
+          },
+
+          data: updatedLogin
+
+        })
+
+        res.send(loginUpdated)
+
+      }
+
+      catch(error) {
+        res.status(404).send({message: error})
+      }
+
+    }
+
+    else {
+      throw Error('Error!')
+    }
+
+  }  
+  
+  catch(error) {
+    res.status(404).send({message: error})
+  }
+
+})
+// #endregion
+
+// #region "avatars endpoints"
+app.get('/avatars', async (req, res) => {
+
+  try {
+
+    const avatars = await prisma.avatar.findMany({ 
+      include: 
+        { user: true } 
+      })
+
+    res.send(avatars)
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.get('/avatars/:id', async (req, res) => {
+
+  const idParam = Number(req.params.id)
+
+  try {
+
+
+    const avatar = await prisma.avatar.findFirst({
+      where: { id: idParam },
+      include: 
+        { user: true } 
+      })
+  
+
+    if (avatar) {
+      res.send(avatar)
+    } 
+    
+    else {
+      res.status(404).send({ error: 'avatar not found.' })
+    }
+
+  }
+
+  catch(error){
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.post('/avatars', async (req, res) => {
+    
+  const token = req.headers.authorization || ''
+  
+  const { 
+    height, 
+    width, 
+    src, 
+    createdAt, 
+    updatedAt,
+    userId
+  } = req.body
+  
+  const newAvatar = {
+    height: height,
+    width: width,
+    src: src,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+
+    //@ts-ignore
+    const avatarCheck = await prisma.avatar.findFirst({ where: { userId: user.id }} )
+    
+    if (avatarCheck) {
+
+      try {
+        const createdAvatar = await prisma.avatar.create({data: newAvatar})
+        res.send(createdAvatar)
+      }
+
+      catch(error) {
+        //@ts-ignore
+        res.status(400).send(`<prev>${error.message}</prev>`)
+      }
+
+    }
+
+    else {
+      res.status(404).send({ error: 'avatar doesnt belong to this user' })
+    }
+
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.delete('/avatars/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = req.params.id
+  
+  try {
+
+    // check that they are signed in
+    const user = await getUserFromToken(token)
+    const commentMatch = await prisma.comment.findUnique( { where: {id: Number(idParam)} } )
+
+    //@ts-ignore
+    const commentUserCheck = commentMatch.userId === user.id
+
+    if (user && commentUserCheck) {
+
+      const commentDeleted = await prisma.comment.delete({ 
+        where: { id: Number(idParam) }
+      })
+
+      const comments = await prisma.comment.findMany( { where: { userId: user.id } } )
+
+      // res.send(orderDeleted)
+      res.send(comments)
+
+    }
+
+    else {
+      res.status(404).send({ error: 'comment not found, or the comment doesnt belong to that user to be deleted.' })
+    }
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.patch('/avatars/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = Number(req.params.id);
+  
+  const { 
+    height, 
+    width, 
+    src, 
+    createdAt, 
+    updatedAt,
+    userId
+  } = req.body
+  
+  const updatedAvatar = {
+    height: height,
+    width: width,
+    src: src,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+    
+    const avatarMatch = await prisma.avatar.findFirst( { where: {id: idParam} } )
+    
+    //@ts-ignore
+    const belongsToUser = avatarMatch.userId === user.id
+    
+    if (user && belongsToUser) {
+
+      try {
+
+        const avatarUpdated = await prisma.avatar.update({
+
+          where: {
+            id: user.id,
+          },
+
+          data: updatedAvatar
+
+        })
+
+        res.send(avatarUpdated)
+
+      }
+
+      catch(error) {
+        res.status(404).send({message: error})
+      }
+
+    }
+
+    else {
+      throw Error('Error!')
+    }
+
+  }  
   
   catch(error) {
     res.status(404).send({message: error})

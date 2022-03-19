@@ -20,14 +20,16 @@ model User {
   phoneNumber String
   email       String        @unique
   password    String
-  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
-  updatedAt   DateTime      @default("2022-03-18T14:21:00+02:00")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
   logins      Login[]
   avatar      Avatar[]
   photos      Photo[]
   comments    Comment[]
   commentsLiked CommentLike[]
   photosLiked   PhotoLike[]
+  followedBy    Follows[] @relation("follower")
+  following     Follows[] @relation("following")
 }
 
 model Photo {
@@ -35,8 +37,8 @@ model Photo {
   caption     String        
   height      Int           @default(250)
   width       Int           @default(250)
-  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
-  updatedAt   DateTime      @default("2020-03-18T14:21:00+02:00")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
   src         String
   userId      Int
   userWhoCreatedIt  User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -47,8 +49,8 @@ model Photo {
 model Comment {
   id          Int           @id @default(autoincrement())
   content     String        
-  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
-  updatedAt   DateTime      @default("2020-03-18T14:21:00+02:00")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
   userId      Int
   photoId     Int
   photo       Photo         @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -59,26 +61,26 @@ model Comment {
 model Login {
   id          Int           @id @default(autoincrement())
   status      String        
-  createdAt   DateTime      @default("2020-03-18T14:21:00+02:00")
+  createdAt   DateTime      @default(now())
   userId      Int
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Avatar {
   id          Int          @id @default(autoincrement())
-  height      Int        @default(50)
-  width       Int        @default(50)
+  height      Int          @default(50)
+  width       Int          @default(50)
   src         String
-  createdAt   DateTime     @default("2020-03-18T14:21:00+02:00")
-  updatedAt   DateTime     @default("2020-03-18T14:21:00+02:00")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now())
   userId      Int          @unique
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model CommentLike {
   id        Int         @id @default(autoincrement())
-  createdAt DateTime    @default("2020-03-18T14:21:00+02:00")
-  updatedAt DateTime    @default("2020-03-18T14:21:00+02:00")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now())
   userId    Int
   commentId Int
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -87,10 +89,20 @@ model CommentLike {
 
 model PhotoLike {
   id        Int         @id @default(autoincrement())
-  createdAt DateTime    @default("2020-03-18T14:21:00+02:00")
-  updatedAt DateTime    @default("2020-03-18T14:21:00+02:00")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now())
   userId    Int
   photoId   Int
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   photo     Photo       @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Follows {
+  id Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+  follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  followerId  Int
+  following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  followingId Int
 }

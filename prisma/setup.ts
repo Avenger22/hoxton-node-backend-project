@@ -16,8 +16,8 @@ const users = [
     phoneNumber: '06933344123',
     email: 'jurgenhasmeta@email.com',
     password: bcrypt.hashSync("jurgen123", 8),
-    createdAt: '"2020-03-18T14:21:00+02:00"',
-    updatedAt: '"2021-03-18T14:21:00+02:00"'
+    createdAt: "2020-03-18T14:21:00+02:00",
+    updatedAt: "2021-03-18T14:21:00+02:00"
   },
   {
     id: 2,
@@ -29,8 +29,8 @@ const users = [
     phoneNumber: '06723344123',
     email: 'egonloli@email.com',
     password: bcrypt.hashSync("egon123", 8),
-    createdAt: '"2018-01-18T14:21:00+02:00"',
-    updatedAt: '"2022-03-18T14:21:00+02:00"'
+    createdAt: "2018-01-18T14:21:00+02:00",
+    updatedAt: "2022-03-18T14:21:00+02:00"
   }
 ]
 
@@ -162,11 +162,30 @@ const photoLikes = [
   }
 ]
 
+const follows = [
+  {
+    id: 1,
+    createdAt: "2020-02-18T14:21:00+02:00",
+    updatedAt: "2020-08-18T14:21:00+02:00",
+    followerId: 1,
+    followingId: 2
+  },
+  {
+    id: 2,
+    createdAt: "2020-02-18T14:21:00+02:00",
+    updatedAt: "2020-08-18T14:21:00+02:00",
+    followerId: 2,
+    followingId: 1
+  }
+]
+
 async function createStuff () {
 
   await prisma.commentLike.deleteMany()
   await prisma.photoLike.deleteMany()
   await prisma.login.deleteMany()
+  //@ts-ignore
+  await prisma.follows.deleteMany()
   await prisma.avatar.deleteMany()
   await prisma.comment.deleteMany()
   await prisma.photo.deleteMany()
@@ -198,6 +217,11 @@ async function createStuff () {
 
   for (const commentLike of commentLikes) {
     await prisma.commentLike.create({ data: commentLike })
+  }
+
+  for (const follow of follows) {
+    //@ts-ignore
+    await prisma.follows.create({ data: follow })
   }
 
 }
