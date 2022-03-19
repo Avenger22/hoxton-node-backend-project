@@ -162,7 +162,7 @@ const photoLikes = [
   }
 ]
 
-const follows = [
+const followers = [
   {
     id: 1,
     createdAt: "2020-02-18T14:21:00+02:00",
@@ -219,7 +219,7 @@ async function createStuff () {
     await prisma.commentLike.create({ data: commentLike })
   }
 
-  for (const follow of follows) {
+  for (const follow of followers) {
     //@ts-ignore
     await prisma.follows.create({ data: follow })
   }

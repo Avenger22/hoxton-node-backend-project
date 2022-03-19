@@ -1215,6 +1215,631 @@ app.patch('/avatars/:id', async (req, res) => {
 })
 // #endregion
 
+// #region "commentLikes endpoints"
+app.get('/commentLikes', async (req, res) => {
+
+  try {
+
+    const commentLikes = await prisma.commentLike.findMany({ 
+      include: 
+        { user: true, comment: true } 
+      })
+
+    res.send(commentLikes)
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.get('/commentLikes/:id', async (req, res) => {
+
+  const idParam = Number(req.params.id)
+
+  try {
+
+
+    const commentLike = await prisma.commentLike.findFirst({ 
+      where: { id: idParam },
+      include: 
+        { user: true, comment: true } 
+      })
+  
+
+    if (commentLike) {
+      res.send(commentLike)
+    } 
+    
+    else {
+      res.status(404).send({ error: 'commentLike not found.' })
+    }
+
+  }
+
+  catch(error){
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.post('/commentLikes', async (req, res) => {
+    
+  const token = req.headers.authorization || ''
+  
+  const { 
+    createdAt, 
+    updatedAt, 
+    userId, 
+    commentId  
+  } = req.body
+  
+  const newCommentLike = {
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId,
+    commentId: commentId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+
+    //@ts-ignore
+    const commentLikeCheck = await prisma.commentLike.findFirst({ where: { userId: user.id }} )
+    
+    if (commentLikeCheck) {
+
+      try {
+        const createdCommentLike = await prisma.commentLike.create({data: newCommentLike})
+        res.send(createdCommentLike)
+      }
+
+      catch(error) {
+        //@ts-ignore
+        res.status(400).send(`<prev>${error.message}</prev>`)
+      }
+
+    }
+
+    else {
+      res.status(404).send({ error: 'commentLike doesnt belong to this user' })
+    }
+
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.delete('/commentLikes/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = req.params.id
+  
+  try {
+
+    // check that they are signed in
+    const user = await getUserFromToken(token)
+    const commentLikeMatch = await prisma.commentLike.findUnique( { where: {id: Number(idParam)} } )
+
+    //@ts-ignore
+    const commentLikeUserCheck = commentLikeMatch.userId === user.id
+
+    if (user && commentLikeUserCheck) {
+
+      const commentLikeDeleted = await prisma.commentLike.delete({ 
+        where: { id: Number(idParam) }
+      })
+
+      const commentLikes = await prisma.commentLike.findMany( { where: { userId: user.id } } )
+
+      // res.send(orderDeleted)
+      res.send(commentLikes)
+
+    }
+
+    else {
+      res.status(404).send({ error: 'commentLike not found, or the commentLike doesnt belong to that user to be deleted.' })
+    }
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.patch('/commentLikes/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = Number(req.params.id);
+  
+  const { 
+    createdAt, 
+    updatedAt, 
+    userId, 
+    commentId  
+  } = req.body
+  
+  const updatedCommentLike = {
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId,
+    commentId: commentId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+    
+    const commentLikeMatch = await prisma.commentLike.findFirst( { where: {id: idParam} } )
+    
+    //@ts-ignore
+    const belongsToUser = commentLikeMatch.userId === user.id
+    
+    if (user && belongsToUser) {
+
+      try {
+
+        const commentLikeUpdated = await prisma.commentLike.update({
+
+          where: {
+            id: user.id,
+          },
+
+          data: updatedCommentLike
+
+        })
+
+        res.send(commentLikeUpdated)
+
+      }
+
+      catch(error) {
+        res.status(404).send({message: error})
+      }
+
+    }
+
+    else {
+      throw Error('Error!')
+    }
+
+  }  
+  
+  catch(error) {
+    res.status(404).send({message: error})
+  }
+
+})
+// #endregion
+
+// #region "photoLikes endpoints"
+app.get('/photoLikes', async (req, res) => {
+
+  try {
+
+    const photoLikes = await prisma.photoLike.findMany({ 
+      include: 
+        { user: true, photo: true } 
+      })
+
+    res.send(photoLikes)
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.get('/photoLikes/:id', async (req, res) => {
+
+  const idParam = Number(req.params.id)
+
+  try {
+
+
+    const photoLike = await prisma.photoLike.findFirst({ 
+      where: { id: idParam },
+      include: 
+        { user: true, photo: true } 
+      })
+  
+
+    if (photoLike) {
+      res.send(photoLike)
+    } 
+    
+    else {
+      res.status(404).send({ error: 'photoLike not found.' })
+    }
+
+  }
+
+  catch(error){
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.post('/photoLikes', async (req, res) => {
+    
+  const token = req.headers.authorization || ''
+  
+  const { 
+    createdAt, 
+    updatedAt, 
+    userId, 
+    photoId  
+  } = req.body
+  
+  const newPhotoLike = {
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId,
+    photoId: photoId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+
+    //@ts-ignore
+    const photoLikeCheck = await prisma.photoLike.findFirst({ where: { userId: user.id }} )
+    
+    if (photoLikeCheck) {
+
+      try {
+        const createdPhotoLike = await prisma.photoLike.create({data: newPhotoLike})
+        res.send(createdPhotoLike)
+      }
+
+      catch(error) {
+        //@ts-ignore
+        res.status(400).send(`<prev>${error.message}</prev>`)
+      }
+
+    }
+
+    else {
+      res.status(404).send({ error: 'photoLike doesnt belong to this user' })
+    }
+
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.delete('/photoLikes/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = req.params.id
+  
+  try {
+
+    // check that they are signed in
+    const user = await getUserFromToken(token)
+    const photoLikeMatch = await prisma.photoLike.findUnique( { where: {id: Number(idParam)} } )
+
+    //@ts-ignore
+    const photoLikeUserCheck = photoLikeMatch.userId === user.id
+
+    if (user && photoLikeUserCheck) {
+
+      const photoLikeDeleted = await prisma.photoLike.delete({ 
+        where: { id: Number(idParam) }
+      })
+
+      const photoLikes = await prisma.photoLike.findMany( { where: { userId: user.id } } )
+
+      // res.send(orderDeleted)
+      res.send(photoLikes)
+
+    }
+
+    else {
+      res.status(404).send({ error: 'photoLike not found, or the photoLike doesnt belong to that user to be deleted.' })
+    }
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.patch('/photoLikes/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = Number(req.params.id);
+  
+  const { 
+    createdAt, 
+    updatedAt, 
+    userId, 
+    photoId  
+  } = req.body
+  
+  const updatedPhotoLike = {
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    userId: userId,
+    photoId: photoId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+    
+    const photoLikeMatch = await prisma.photoLike.findFirst( { where: {id: idParam} } )
+    
+    //@ts-ignore
+    const belongsToUser = photoLikeMatch.userId === user.id
+    
+    if (user && belongsToUser) {
+
+      try {
+
+        const photoLikeUpdated = await prisma.photoLike.update({
+
+          where: {
+            id: user.id,
+          },
+
+          data: updatedPhotoLike
+
+        })
+
+        res.send(photoLikeUpdated)
+
+      }
+
+      catch(error) {
+        res.status(404).send({message: error})
+      }
+
+    }
+
+    else {
+      throw Error('Error!')
+    }
+
+  }  
+  
+  catch(error) {
+    res.status(404).send({message: error})
+  }
+
+})
+// #endregion
+
+// #region "followers endpoints"
+app.get('/followers', async (req, res) => {
+
+  try {
+
+    //@ts-ignore
+    const followers = await prisma.follows.findMany({ 
+      include: 
+        { follower: true, following: true } 
+      })
+
+    res.send(followers)
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.get('/followers/:id', async (req, res) => {
+
+  const idParam = Number(req.params.id)
+
+  try {
+
+    //@ts-ignore
+    const follower = await prisma.follows.findFirst({ 
+      where: { id: idParam },
+      include: 
+        { follower: true, following: true } 
+      })
+  
+
+    if (follower) {
+      res.send(follower)
+    } 
+    
+    else {
+      res.status(404).send({ error: 'followers not found.' })
+    }
+
+  }
+
+  catch(error){
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.post('/followers', async (req, res) => {
+    
+  const token = req.headers.authorization || ''
+  
+  const { 
+    createdAt, 
+    updatedAt, 
+    followerId, 
+    followingId  
+  } = req.body
+  
+  const newFollower = {
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    followerId: followerId,
+    followingId: followingId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+    
+    if (user) {
+
+      try {
+        //@ts-ignore
+        const createdFollower = await prisma.follows.create({data: newFollower})
+        res.send(createdFollower)
+      }
+
+      catch(error) {
+        //@ts-ignore
+        res.status(400).send(`<prev>${error.message}</prev>`)
+      }
+
+    }
+
+    else {
+      res.status(404).send({ error: 'follower doesnt belong to this user' })
+    }
+
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.delete('/followers/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = req.params.id
+  
+  try {
+
+    // check that they are signed in
+    const user = await getUserFromToken(token)
+    const photoLikeMatch = await prisma.photoLike.findUnique( { where: {id: Number(idParam)} } )
+
+    //@ts-ignore
+    const photoLikeUserCheck = photoLikeMatch.userId === user.id
+
+    if (user && photoLikeUserCheck) {
+
+      const photoLikeDeleted = await prisma.photoLike.delete({ 
+        where: { id: Number(idParam) }
+      })
+
+      const photoLikes = await prisma.photoLike.findMany( { where: { userId: user.id } } )
+
+      // res.send(orderDeleted)
+      res.send(photoLikes)
+
+    }
+
+    else {
+      res.status(404).send({ error: 'photoLike not found, or the photoLike doesnt belong to that user to be deleted.' })
+    }
+
+  }
+
+  catch(error) {
+    //@ts-ignore
+    res.status(400).send(`<prev>${error.message}</prev>`)
+  }
+
+})
+
+app.patch('/followers/:id', async (req, res) => {
+
+  const token = req.headers.authorization || ''
+  const idParam = Number(req.params.id);
+  
+  const { 
+    createdAt, 
+    updatedAt, 
+    followerId, 
+    followingId  
+  } = req.body
+  
+  const updatedFollower = {
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    followerId: followerId,
+    followingId: followingId
+  }
+
+  try {
+
+    const user = await getUserFromToken(token)
+            
+    if (user) {
+
+      try {
+
+        //@ts-ignore
+        const followerUpdated = await prisma.follows.update({
+
+          where: {
+            id: user.id,
+          },
+
+          data: updatedFollower
+
+        })
+
+        res.send(followerUpdated)
+
+      }
+
+      catch(error) {
+        res.status(404).send({message: error})
+      }
+
+    }
+
+    else {
+      throw Error('Error!')
+    }
+
+  }  
+  
+  catch(error) {
+    res.status(404).send({message: error})
+  }
+
+})
+// #endregion
+
 // #endregion
 
 
