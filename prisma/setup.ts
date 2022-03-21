@@ -60,14 +60,14 @@ const logins = [
 const avatars = [
   {
     id: 1,
-    src: "item1.jpg",
+    src: "/assets/avatars/jurgen-avatar.jpg",
     createdAt: "2020-05-18T14:21:00+02:00",
     updatedAt: "2020-07-18T14:21:00+02:00",
     userId: 1
   },
   {
     id: 2,
-    src: "item2.jpg",
+    src: "/assets/avatars/egon-avatar.jpg",
     createdAt: "2010-05-18T14:21:00+02:00",
     updatedAt: "2020-07-18T14:21:00+02:00",
     userId: 2
@@ -82,7 +82,7 @@ const photos = [
     updatedAt: "2020-07-18T14:21:00+02:00",
     countCommentsInside: 0,
     countLikesInside: 0,
-    src: "item1.jpg",
+    src: "/assets/photos/bahamas.jpeg",
     userId: 1
   },
   {
@@ -92,7 +92,7 @@ const photos = [
     updatedAt: "2020-07-18T14:21:00+02:00",
     countCommentsInside: 0,
     countLikesInside: 0,
-    src: "item1.jpg",
+    src: "/assets/photos/durres.jpg",
     userId: 2
   },
   {
@@ -102,7 +102,7 @@ const photos = [
     updatedAt: "2020-08-18T14:21:00+02:00",
     countCommentsInside: 0,
     countLikesInside: 0,
-    src: "item1.jpg",
+    src: "/assets/photos/kosova.jpg",
     userId: 1
   }
 ]
