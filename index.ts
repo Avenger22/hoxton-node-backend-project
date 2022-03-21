@@ -1,7 +1,7 @@
 // #region 'Importing and configuration of Prisma'
 import express from 'express'
 import cors from 'cors'
-import {  Prisma, PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import 'dotenv/config'
@@ -118,13 +118,14 @@ app.get('/users', async (req, res) => {
 
     const users = await prisma.user.findMany({
       include: { 
-        photos: true, logins: true, 
+        photos: true, 
+        logins: true, 
         comments:true, 
         avatar: true, 
         commentsLiked: { include: {comment: true} },
         photosLiked:  { include: { photo: true} },
-        followedBy: { include: { follower: true } },
-        following:  { include: { following: true } }
+        followedBy: { include: { following: true } },
+        following:  { include: { follower: true } }
       }
     })
 

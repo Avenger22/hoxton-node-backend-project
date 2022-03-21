@@ -11,105 +11,105 @@ datasource db {
 }
 
 model User {
-  id          Int           @id @default(autoincrement())
-  firstName   String        
-  lastName    String
-  userName    String        @unique
-  gender      String        @default("M")
-  birthday    String        
-  phoneNumber String        @default("0691111111")
-  email       String        @unique
-  password    String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
-  logins      Login[]       
-  avatar      Avatar[]
-  photos      Photo[]
-  comments    Comment[]
-  commentsLiked CommentLike[]
-  photosLiked   PhotoLike[]
-  followedBy    Follows[] @relation("follower")
-  following     Follows[] @relation("following")
-  countPhotosCreated Int @default(0)
-  countCommentsCreated Int @default(0)
-  countCommentsLiked Int @default(0)
-  countPhotosLiked Int @default(0)
-  countLogins Int @default(0)
-  countFollowers Int @default(0)
-  countFollowing Int @default(0)
+  id                   Int           @id @default(autoincrement())
+  firstName            String
+  lastName             String
+  userName             String        @unique
+  gender               String        @default("M")
+  birthday             String
+  phoneNumber          String        @default("0691111111")
+  email                String        @unique
+  password             String
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @default(now())
+  logins               Login[]
+  avatar               Avatar[]
+  photos               Photo[]
+  comments             Comment[]
+  commentsLiked        CommentLike[]
+  photosLiked          PhotoLike[]
+  followedBy           Follows[]     @relation("follower")
+  following            Follows[]     @relation("following")
+  countPhotosCreated   Int           @default(0)
+  countCommentsCreated Int           @default(0)
+  countCommentsLiked   Int           @default(0)
+  countPhotosLiked     Int           @default(0)
+  countLogins          Int           @default(0)
+  countFollowers       Int           @default(0)
+  countFollowing       Int           @default(0)
 }
 
 model Photo {
-  id          Int           @id @default(autoincrement())
-  caption     String        
-  height      Int           @default(250)
-  width       Int           @default(250)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
-  src         String
-  userId      Int
-  userWhoCreatedIt  User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  comments    Comment[]
-  usersWhoLikedIt PhotoLike[]
+  id               Int         @id @default(autoincrement())
+  caption          String
+  height           Int         @default(250)
+  width            Int         @default(250)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @default(now())
+  src              String
+  userId           Int
+  userWhoCreatedIt User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  comments         Comment[]
+  usersWhoLikedIt  PhotoLike[]
 }
 
 model Comment {
-  id          Int           @id @default(autoincrement())
-  content     String        @default("")
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
-  userId      Int
-  photoId     Int
-  photo       Photo         @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userWhoCreatedIt  User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  usersWhoLikedIt   CommentLike[]
+  id               Int           @id @default(autoincrement())
+  content          String        @default("")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now())
+  userId           Int
+  photoId          Int
+  photo            Photo         @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userWhoCreatedIt User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  usersWhoLikedIt  CommentLike[]
 }
 
 model Login {
-  id          Int           @id @default(autoincrement())
-  status      String        @default("success")
-  createdAt   DateTime      @default(now())
-  userId      Int
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id        Int      @id @default(autoincrement())
+  status    String   @default("success")
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Avatar {
-  id          Int          @id @default(autoincrement())
-  height      Int          @default(50)
-  width       Int          @default(50)
-  src         String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now())
-  userId      Int          @unique
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id        Int      @id @default(autoincrement())
+  height    Int      @default(50)
+  width     Int      @default(50)
+  src       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model CommentLike {
-  id        Int         @id @default(autoincrement())
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @default(now())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
   userId    Int
   commentId Int
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  comment   Comment     @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model PhotoLike {
-  id        Int         @id @default(autoincrement())
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @default(now())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
   userId    Int
   photoId   Int
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  photo     Photo       @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Follows {
-  id Int      @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
-  follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   followerId  Int
-  following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   followingId Int
 }
