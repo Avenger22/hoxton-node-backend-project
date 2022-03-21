@@ -129,13 +129,6 @@ app.get('/users', async (req, res) => {
       }
     })
 
-   
-    // const numberOfCommentsCreated = 0 
-    // const numberOfCommentsLiked = 0
-    // const numberOfPhotosLikes = 0
-    // const numberOfFollowers = 0 
-    // const numberOfFollowing = 0
-
     res.send(users)
 
   }
@@ -161,8 +154,8 @@ app.get('/users/:id', async (req, res) => {
         avatar: true, 
         commentsLiked: { include: {comment: true} },
         photosLiked:  { include: { photo: true} },
-        followedBy: { include: { follower: true } },
-        following:  { include: { following: true } }
+        followedBy: { include: { following: true } },
+        following:  { include: { follower: true } }
       }
     })
 
