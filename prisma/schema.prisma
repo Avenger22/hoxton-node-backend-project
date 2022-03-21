@@ -22,6 +22,7 @@ model User {
   password             String
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @default(now())
+  description          String        @default("")
   logins               Login[]
   avatar               Avatar[]
   photos               Photo[]
@@ -42,10 +43,10 @@ model User {
 model Photo {
   id               Int         @id @default(autoincrement())
   caption          String
-  height           Int         @default(250)
-  width            Int         @default(250)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @default(now())
+  countCommentsInside Int           @default(0)
+  countLikesInside    Int           @default(0)
   src              String
   userId           Int
   userWhoCreatedIt User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -60,6 +61,7 @@ model Comment {
   updatedAt        DateTime      @default(now())
   userId           Int
   photoId          Int
+  countLikesInside Int           @default(0)
   photo            Photo         @relation(fields: [photoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userWhoCreatedIt User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   usersWhoLikedIt  CommentLike[]

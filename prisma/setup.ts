@@ -17,7 +17,8 @@ const users = [
     email: 'jurgenhasmeta@email.com',
     password: bcrypt.hashSync("jurgen123", 8),
     createdAt: "2020-03-18T14:21:00+02:00",
-    updatedAt: "2021-03-18T14:21:00+02:00"
+    updatedAt: "2021-03-18T14:21:00+02:00",
+    description: "I am jurgen hasmeta"
   },
   {
     id: 2,
@@ -30,7 +31,8 @@ const users = [
     email: 'egonloli@email.com',
     password: bcrypt.hashSync("egon123", 8),
     createdAt: "2018-01-18T14:21:00+02:00",
-    updatedAt: "2022-03-18T14:21:00+02:00"
+    updatedAt: "2022-03-18T14:21:00+02:00",
+    description: "I am egon loli"
   }
 ]
 
@@ -58,8 +60,6 @@ const logins = [
 const avatars = [
   {
     id: 1,
-    height: 250,
-    width: 55,
     src: "item1.jpg",
     createdAt: "2020-05-18T14:21:00+02:00",
     updatedAt: "2020-07-18T14:21:00+02:00",
@@ -67,8 +67,6 @@ const avatars = [
   },
   {
     id: 2,
-    height: 250,
-    width: 55,
     src: "item2.jpg",
     createdAt: "2010-05-18T14:21:00+02:00",
     updatedAt: "2020-07-18T14:21:00+02:00",
@@ -80,30 +78,30 @@ const photos = [
   {
     id: 1,
     caption: "vacation in bahamas",
-    height: 500,
-    width: 555,
     createdAt: "2020-05-18T14:21:00+02:00",
     updatedAt: "2020-07-18T14:21:00+02:00",
+    countCommentsInside: 0,
+    countLikesInside: 0,
     src: "item1.jpg",
     userId: 1
   },
   {
     id: 2,
     caption: "vacation in durres",
-    height: 500,
-    width: 555,
     createdAt: "2020-08-18T14:21:00+02:00",
     updatedAt: "2020-07-18T14:21:00+02:00",
+    countCommentsInside: 0,
+    countLikesInside: 0,
     src: "item1.jpg",
     userId: 2
   },
   {
     id: 3,
     caption: "vacation in kosova",
-    height: 500,
-    width: 555,
     createdAt: "2020-02-18T14:21:00+02:00",
     updatedAt: "2020-08-18T14:21:00+02:00",
+    countCommentsInside: 0,
+    countLikesInside: 0,
     src: "item1.jpg",
     userId: 1
   }
@@ -116,7 +114,8 @@ const comments = [
     createdAt: "2020-01-18T14:21:00+02:00",
     updatedAt: "2020-02-18T14:21:00+02:00",
     userId: 1,
-    photoId: 2
+    photoId: 2,
+    countLikesInside: 0
   },
   {
     id: 2,
@@ -124,7 +123,8 @@ const comments = [
     createdAt: "2020-08-18T14:21:00+02:00",
     updatedAt: "2020-09-18T14:21:00+02:00",
     userId: 2,
-    photoId: 1
+    photoId: 1,
+    countLikesInside: 0
   }
 ]
 

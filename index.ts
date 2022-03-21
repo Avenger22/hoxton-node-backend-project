@@ -258,7 +258,8 @@ app.post('/users', async (req, res) => {
     email,
     password,
     createdAt,
-    updatedAt
+    updatedAt,
+    description
    } = req.body
   
   try {
@@ -276,7 +277,8 @@ app.post('/users', async (req, res) => {
       email: email,
       password: hashedPassword,
       createdAt: createdAt,
-      updatedAt: updatedAt
+      updatedAt: updatedAt,
+      description: description
     }
 
     const userCheck = await prisma.user.findFirst({ where: { email: newUser.email } })
@@ -398,7 +400,8 @@ app.patch('/users/:id', async (req, res) => {
         email,
         password,
         createdAt,
-        updatedAt
+        updatedAt,
+        description
       } = req.body
 
       const hashedPassword = bcrypt.hashSync(password, 15)
@@ -413,7 +416,8 @@ app.patch('/users/:id', async (req, res) => {
         email: email,
         password: hashedPassword,
         createdAt: createdAt,
-        updatedAt: updatedAt
+        updatedAt: updatedAt,
+        description
       }
 
       try {
@@ -471,13 +475,68 @@ app.get('/photos', async (req, res) => {
 
     const photos = await prisma.photo.findMany({ 
       include: 
-        { userWhoCreatedIt: true, 
+        { 
+          userWhoCreatedIt: true, 
           comments: true, 
           usersWhoLikedIt: { include: { user:true } } 
         } 
       })
+
+    let countCommentsInside = []
+    let countLikesInside = []
+
+    for (const photo of photos) {
+      
+      let countCommentsInsideVariable = 0
+      let countLikesInsideVariable = 0
+
+      //@ts-ignore
+      for (const user of photo.usersWhoLikedIt) {
+        countLikesInsideVariable++
+      }
+
+      countLikesInside.push(countLikesInsideVariable)
+
+      //@ts-ignore
+      for (const comment of photo.comments) {
+        countCommentsInsideVariable++
+      }
+
+      countCommentsInside.push(countCommentsInsideVariable)
+
+    }
+
+    for (let i = 0; i < photos.length; i++) {
+
+      await prisma.photo.update({
+
+        where: {id: photos[i].id},
+
+        data: {
+          //@ts-ignore
+          countCommentsInside: countCommentsInside[i],
+          countLikesInside: countLikesInside[i]
+        },
+
+        include: { 
+          userWhoCreatedIt: true, 
+          comments: true, 
+          usersWhoLikedIt: { include: { user:true } }
+        }
+
+      })
+
+    }
     
-      res.send(photos)
+    let updatedPhotoWithCounts = await prisma.photo.findMany({
+      include: {
+        userWhoCreatedIt: true, 
+        comments: true, 
+        usersWhoLikedIt: { include: { user:true } }
+      }
+    })
+
+    res.send(updatedPhotoWithCounts)
 
   }
 
@@ -495,16 +554,51 @@ app.get('/photos/:id', async (req, res) => {
   try {
 
     const photo = await prisma.photo.findFirst({
+
       where: { id: idParam },
+
       include: 
-        { userWhoCreatedIt: true, 
+        { 
+          userWhoCreatedIt: true, 
           comments: true, 
           usersWhoLikedIt: { include: { user:true } } 
         } 
+
       })
 
+    let countCommentsInside = 0
+    let countLikesInside = 0
+
+    //@ts-ignore
+    for (const user of photo.usersWhoLikedIt) {
+      countLikesInside++
+    }
+
+    //@ts-ignore
+    for (const comment of photo.comments) {
+      countCommentsInside++
+    }
+
+    const updatedPhotoWithCounts = await prisma.photo.update({
+
+      where: { id: idParam },
+
+      data: {
+        //@ts-ignore
+        countCommentsInside: countCommentsInside,
+        countLikesInside: countLikesInside
+      },
+
+      include: { 
+        userWhoCreatedIt: true, 
+        comments: true, 
+        usersWhoLikedIt: { include: { user:true } }
+      }
+
+    })
+
     if (photo) {
-      res.send(photo)
+      res.send(updatedPhotoWithCounts)
     } 
     
     else {
@@ -526,20 +620,20 @@ app.post('/photos', async (req, res) => {
   
   const { 
     caption, 
-    height, 
-    width, 
     createdAt, 
     updatedAt, 
+    countCommentsInside,
+    countLikesInside,
     src, 
     userId 
   } = req.body
   
   const newPhoto = {
     caption: caption,
-    height: height,
-    width:  width,
     createdAt: createdAt,
     updatedAt: updatedAt,
+    countCommentsInside,
+    countLikesInside,
     src:  src,
     userId: userId
   }
@@ -639,21 +733,21 @@ app.patch('/photos/:id', async (req, res) => {
   const idParam = Number(req.params.id)
   
   const { 
-    caption, 
-    height, 
-    width, 
+    caption,  
     createdAt, 
     updatedAt, 
+    countCommentsInside,
+    countLikesInside,
     src, 
     userId 
   } = req.body
 
   const updatedPhoto = {
     caption: caption,
-    height: height,
-    width:  width,
     createdAt: createdAt,
     updatedAt: updatedAt,
+    countCommentsInside,
+    countLikesInside,
     src:  src,
     userId: userId
   }
@@ -721,13 +815,58 @@ app.get('/comments', async (req, res) => {
 
     const comments = await prisma.comment.findMany({ 
       include: 
-        { photo: true, 
+        { 
+          photo: true, 
           userWhoCreatedIt: true, 
           usersWhoLikedIt: { include: { user:true } } 
         } 
       })
 
-    res.send(comments)
+    let countLikesInsideArray = []
+
+    for (const comment of comments) {
+
+      let countLikesInside = 0
+
+      //@ts-ignore
+      for (const user of comment.usersWhoLikedIt) {
+        countLikesInside++
+      }
+
+      countLikesInsideArray.push(countLikesInside)
+
+    }
+
+    for (let i = 0; i < comments.length; i++) {
+
+      await prisma.comment.update({
+
+        where: { id: comments[i].id },
+
+        data: {
+          //@ts-ignore
+          countLikesInside: countLikesInsideArray[i]
+        },
+
+        include: { 
+          photo: true, 
+          userWhoCreatedIt: true, 
+          usersWhoLikedIt: { include: { user:true } }
+        }
+
+      })
+
+    }
+
+    const updatedCommentsWithCounts = await prisma.comment.findMany({
+      include: { 
+        photo: true, 
+        userWhoCreatedIt: true, 
+        usersWhoLikedIt: { include: { user:true } }
+      }
+    })
+
+    res.send(updatedCommentsWithCounts)
 
   }
 
@@ -748,15 +887,40 @@ app.get('/comments/:id', async (req, res) => {
     const comment = await prisma.comment.findFirst({
       where: { id: idParam },
       include: 
-        { photo: true, 
+        { 
+          photo: true, 
           userWhoCreatedIt: true, 
           usersWhoLikedIt: { include: { user:true } } 
         } 
       })
   
 
+    let countLikesInside = 0
+
+    //@ts-ignore
+    for (const user of comment.usersWhoLikedIt) {
+      countLikesInside++
+    }
+
+    const updatedCommentWithCounts = await prisma.comment.update({
+
+      where: { id: idParam },
+
+      data: {
+        //@ts-ignore
+        countLikesInside: countLikesInside
+      },
+
+      include: { 
+        photo: true, 
+        userWhoCreatedIt: true, 
+        usersWhoLikedIt: { include: { user:true } }
+      }
+
+    })
+
     if (comment) {
-      res.send(comment)
+      res.send(updatedCommentWithCounts)
     } 
     
     else {
@@ -781,7 +945,8 @@ app.post('/comments', async (req, res) => {
     createdAt, 
     updatedAt, 
     userId, 
-    photoId
+    photoId,
+    countLikesInside
   } = req.body
   
   const newComment = {
@@ -789,7 +954,8 @@ app.post('/comments', async (req, res) => {
     createdAt: createdAt,
     updatedAt: updatedAt,
     userId: userId,
-    photoId: photoId
+    photoId: photoId,
+    countLikesInside: countLikesInside
   }
 
   try {
@@ -889,7 +1055,8 @@ app.patch('/comments/:id', async (req, res) => {
     createdAt, 
     updatedAt, 
     userId, 
-    photoId
+    photoId,
+    countLikesInside
   } = req.body
   
   const updatedComment = {
@@ -897,7 +1064,8 @@ app.patch('/comments/:id', async (req, res) => {
     createdAt: createdAt,
     updatedAt: updatedAt,
     userId: userId,
-    photoId: photoId
+    photoId: photoId,
+    countLikesInside: countLikesInside
   }
 
   try {
