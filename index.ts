@@ -124,8 +124,8 @@ app.get('/users', async (req, res) => {
         avatar: true, 
         commentsLiked: { include: {comment: true} },
         photosLiked:  { include: { photo: true} },
-        followedBy: { include: { following: true } },
-        following:  { include: { follower: true } }
+        followedBy: { include: { following: {include: { avatar: true } } } },
+        following:  { include: { follower: {include: {avatar: true} } } }
       }
     })
 
@@ -223,8 +223,8 @@ app.get('/users/:id', async (req, res) => {
         avatar: true, 
         commentsLiked: { include: {comment: true} },
         photosLiked:  { include: { photo: true} },
-        followedBy: { include: { follower: true } },
-        following:  { include: { following: true } }
+        followedBy: { include: { following: {include: { avatar: true } } } },
+        following:  { include: { follower: {include: {avatar: true} } } }
       }
 
     })
@@ -474,12 +474,26 @@ app.get('/photos', async (req, res) => {
   try {
 
     const photos = await prisma.photo.findMany({ 
+
       include: 
         { 
           userWhoCreatedIt: true, 
           comments: true, 
-          usersWhoLikedIt: { include: { user:true } } 
-        } 
+          usersWhoLikedIt: { 
+            include: { 
+            user: {
+            include: { 
+              photos: true, 
+              logins: true, 
+              comments:true, 
+              avatar: true, 
+              commentsLiked: { include: {comment: true} },
+              photosLiked:  { include: { photo: true} },
+              followedBy: { include: { following: true } },
+              following:  { include: { follower: true } } } } 
+            }
+        }}
+
       })
 
     let countCommentsInside = []
@@ -529,11 +543,30 @@ app.get('/photos', async (req, res) => {
     }
     
     let updatedPhotoWithCounts = await prisma.photo.findMany({
-      include: {
-        userWhoCreatedIt: true, 
-        comments: true, 
-        usersWhoLikedIt: { include: { user:true } }
+
+      include: 
+        { 
+
+          userWhoCreatedIt: { include: { avatar: true } }, 
+
+          comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+
+          usersWhoLikedIt: { 
+            include: { 
+            user: {
+            include: { 
+              photos: true, 
+              logins: true, 
+              comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+              avatar: { include: { user: true } }, 
+              commentsLiked: { include: {comment: true} },
+              photosLiked:  { include: { photo: true} },
+              followedBy: { include: { following: true } },
+              following:  { include: { follower: true } } } }, photo: true 
+            }
+          }
       }
+
     })
 
     res.send(updatedPhotoWithCounts)
@@ -557,14 +590,27 @@ app.get('/photos/:id', async (req, res) => {
 
       where: { id: idParam },
 
-      include: 
-        { 
-          userWhoCreatedIt: true, 
-          comments: true, 
-          usersWhoLikedIt: { include: { user:true } } 
-        } 
+      include: { 
 
-      })
+          userWhoCreatedIt: true,
+          comments: true,
+
+          usersWhoLikedIt: { 
+            include: { 
+            user: {
+            include: { 
+              photos: true, 
+              logins: true, 
+              comments: true, 
+              avatar: true, 
+              commentsLiked: { include: {comment: true} },
+              photosLiked:  { include: { photo: true} },
+              followedBy: { include: { following: true } },
+              following:  { include: { follower: true } } } } 
+            }
+        }
+
+      }})
 
     let countCommentsInside = 0
     let countLikesInside = 0
@@ -589,10 +635,27 @@ app.get('/photos/:id', async (req, res) => {
         countLikesInside: countLikesInside
       },
 
-      include: { 
-        userWhoCreatedIt: true, 
-        comments: true, 
-        usersWhoLikedIt: { include: { user:true } }
+      include: 
+        { 
+
+          userWhoCreatedIt: { include: { avatar: true } }, 
+
+          comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+
+          usersWhoLikedIt: { 
+            include: { 
+            user: {
+            include: { 
+              photos: true, 
+              logins: true, 
+              comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+              avatar: { include: { user: true } }, 
+              commentsLiked: { include: {comment: true} },
+              photosLiked:  { include: { photo: true} },
+              followedBy: { include: { following: true } },
+              following:  { include: { follower: true } } } }, photo: true 
+            }
+          }
       }
 
     })
@@ -859,11 +922,30 @@ app.get('/comments', async (req, res) => {
     }
 
     const updatedCommentsWithCounts = await prisma.comment.findMany({
-      include: { 
-        photo: true, 
-        userWhoCreatedIt: true, 
-        usersWhoLikedIt: { include: { user:true } }
+
+      include: 
+        { 
+
+          userWhoCreatedIt: { include: { avatar: true } }, 
+
+          photo: { include: { userWhoCreatedIt: true } }, 
+
+          usersWhoLikedIt: { 
+            include: { 
+            user: {
+            include: { 
+              photos: true, 
+              logins: true, 
+              comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+              avatar: { include: { user: true } }, 
+              commentsLiked: { include: {comment: true} },
+              photosLiked:  { include: { photo: true} },
+              followedBy: { include: { following: {include: {avatar: true} } } },
+              following:  { include: { follower: {include: {avatar: true} } } } } }
+            }
+          }
       }
+
     })
 
     res.send(updatedCommentsWithCounts)
@@ -911,10 +993,27 @@ app.get('/comments/:id', async (req, res) => {
         countLikesInside: countLikesInside
       },
 
-      include: { 
-        photo: true, 
-        userWhoCreatedIt: true, 
-        usersWhoLikedIt: { include: { user:true } }
+      include: 
+        { 
+
+          userWhoCreatedIt: { include: { avatar: true } }, 
+
+          photo: { include: { userWhoCreatedIt: true } }, 
+
+          usersWhoLikedIt: { 
+            include: { 
+            user: {
+            include: { 
+              photos: true, 
+              logins: true, 
+              comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+              avatar: { include: { user: true } }, 
+              commentsLiked: { include: {comment: true} },
+              photosLiked:  { include: { photo: true} },
+              followedBy: { include: { following: true } },
+              following:  { include: { follower: true } } } } 
+            }
+          }
       }
 
     })
