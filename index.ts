@@ -712,19 +712,35 @@ app.post('/photos', async (req, res) => {
 
       try {
 
-        const createdPhoto = await prisma.photo.create({data: newPhoto})
-        
-        const createdPhotoFull = await prisma.photo.findFirst({
-          where: { id: createdPhoto.id },
-          include: { 
-          userWhoCreatedIt: true, 
-          comments: true, 
-          usersWhoLikedIt: { include: { user:true } } 
-          }  
+        await prisma.photo.create({data: newPhoto})
+        let getAllPhotos = await prisma.photo.findMany({
 
+          include: 
+            { 
+    
+              userWhoCreatedIt: { include: { avatar: true } }, 
+    
+              comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+    
+              usersWhoLikedIt: { 
+                include: { 
+                user: {
+                include: { 
+                  photos: true, 
+                  logins: true, 
+                  comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+                  avatar: { include: { user: true } }, 
+                  commentsLiked: { include: {comment: true} },
+                  photosLiked:  { include: { photo: true} },
+                  followedBy: { include: { following: true } },
+                  following:  { include: { follower: true } } } }, photo: true 
+                }
+              }
+          }
+    
         })
 
-        res.send(createdPhotoFull)
+        res.send(getAllPhotos)
 
       }
 
@@ -765,14 +781,38 @@ app.delete('/photos/:id', async (req, res) => {
 
     if (user && photoUserCheck) {
 
-      const photoDeleted = await prisma.photo.delete({ 
+      await prisma.photo.delete({ 
         where: { id: Number(idParam) }
       })
 
-      const photos = await prisma.photo.findMany( { where: { userId: user.id } } )
+      let getAllPhotos = await prisma.photo.findMany({
 
-      // res.send(orderDeleted)
-      res.send(photos)
+        include: 
+          { 
+  
+            userWhoCreatedIt: { include: { avatar: true } }, 
+  
+            comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+  
+            usersWhoLikedIt: { 
+              include: { 
+              user: {
+              include: { 
+                photos: true, 
+                logins: true, 
+                comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+                avatar: { include: { user: true } }, 
+                commentsLiked: { include: {comment: true} },
+                photosLiked:  { include: { photo: true} },
+                followedBy: { include: { following: true } },
+                following:  { include: { follower: true } } } }, photo: true 
+              }
+            }
+        }
+  
+      })
+
+      res.send(getAllPhotos)
 
     }
 
@@ -828,7 +868,7 @@ app.patch('/photos/:id', async (req, res) => {
 
       try {
 
-        const photo = await prisma.photo.update({
+        await prisma.photo.update({
 
           where: {
             id: user.id
@@ -838,17 +878,34 @@ app.patch('/photos/:id', async (req, res) => {
 
         })
 
-        const photoFull = await prisma.photo.findFirst({ 
-          where: { id: photo.id },
-          include: { 
-          userWhoCreatedIt: true, 
-          comments: true, 
-          usersWhoLikedIt: { include: { user:true } } 
-          } 
+        let getAllPhotos = await prisma.photo.findMany({
 
+          include: 
+            { 
+    
+              userWhoCreatedIt: { include: { avatar: true } }, 
+    
+              comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+    
+              usersWhoLikedIt: { 
+                include: { 
+                user: {
+                include: { 
+                  photos: true, 
+                  logins: true, 
+                  comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+                  avatar: { include: { user: true } }, 
+                  commentsLiked: { include: {comment: true} },
+                  photosLiked:  { include: { photo: true} },
+                  followedBy: { include: { following: true } },
+                  following:  { include: { follower: true } } } }, photo: true 
+                }
+              }
+          }
+    
         })
 
-        res.send(photoFull)
+        res.send(getAllPhotos)
 
       }
 
@@ -1070,7 +1127,7 @@ app.post('/comments', async (req, res) => {
 
         const createdComment = await prisma.comment.create({data: newComment})
         
-        const createdCommentFull = await prisma.comment.findFirst({
+        await prisma.comment.findFirst({
           where: { id: createdComment.id },
           include: { 
           photo: true, 
@@ -1079,7 +1136,34 @@ app.post('/comments', async (req, res) => {
           } 
         })
 
-        res.send(createdCommentFull)
+        let getAllPhotos = await prisma.photo.findMany({
+
+          include: 
+            { 
+    
+              userWhoCreatedIt: { include: { avatar: true } }, 
+    
+              comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+    
+              usersWhoLikedIt: { 
+                include: { 
+                user: {
+                include: { 
+                  photos: true, 
+                  logins: true, 
+                  comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+                  avatar: { include: { user: true } }, 
+                  commentsLiked: { include: {comment: true} },
+                  photosLiked:  { include: { photo: true} },
+                  followedBy: { include: { following: true } },
+                  following:  { include: { follower: true } } } }, photo: true 
+                }
+              }
+          }
+    
+        })
+
+        res.send(getAllPhotos)
 
       }
 
@@ -1120,14 +1204,38 @@ app.delete('/comments/:id', async (req, res) => {
 
     if (user && commentUserCheck) {
 
-      const commentDeleted = await prisma.comment.delete({ 
+      await prisma.comment.delete({ 
         where: { id: Number(idParam) }
       })
 
-      const comments = await prisma.comment.findMany( { where: { userId: user.id } } )
+      let getAllPhotos = await prisma.photo.findMany({
 
-      // res.send(orderDeleted)
-      res.send(comments)
+        include: 
+          { 
+  
+            userWhoCreatedIt: { include: { avatar: true } }, 
+  
+            comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+  
+            usersWhoLikedIt: { 
+              include: { 
+              user: {
+              include: { 
+                photos: true, 
+                logins: true, 
+                comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+                avatar: { include: { user: true } }, 
+                commentsLiked: { include: {comment: true} },
+                photosLiked:  { include: { photo: true} },
+                followedBy: { include: { following: true } },
+                following:  { include: { follower: true } } } }, photo: true 
+              }
+            }
+        }
+  
+      })
+
+      res.send(getAllPhotos)
 
     }
 
@@ -1190,16 +1298,34 @@ app.patch('/comments/:id', async (req, res) => {
 
         })
 
-        const commentUpdatedFull = await prisma.comment.findFirst({ 
-          where: { id: commentUpdated.id },
-          include: { 
-          photo: true, 
-          userWhoCreatedIt: true, 
-          usersWhoLikedIt: { include: { user:true } } 
-          } 
+        let getAllPhotos = await prisma.photo.findMany({
+
+          include: 
+            { 
+    
+              userWhoCreatedIt: { include: { avatar: true } }, 
+    
+              comments: { include: { userWhoCreatedIt: true, photo: true } }, 
+    
+              usersWhoLikedIt: { 
+                include: { 
+                user: {
+                include: { 
+                  photos: true, 
+                  logins: true, 
+                  comments: { include: { userWhoCreatedIt: true, photo: { include: { userWhoCreatedIt: true }}} }, 
+                  avatar: { include: { user: true } }, 
+                  commentsLiked: { include: {comment: true} },
+                  photosLiked:  { include: { photo: true} },
+                  followedBy: { include: { following: true } },
+                  following:  { include: { follower: true } } } }, photo: true 
+                }
+              }
+          }
+    
         })
 
-        res.send(commentUpdatedFull)
+        res.send(getAllPhotos)
 
       }
 
@@ -2205,16 +2331,22 @@ app.post('/followers', async (req, res) => {
       try {
 
         //@ts-ignore
-        const createdFollower = await prisma.follows.create({data: newFollower})
+        await prisma.follows.create({data: newFollower})
         
-        //@ts-ignore
-        const createdFollowerFull = await prisma.follows.findFirst({ 
-        where: { id: createdFollower.id },
-        include: 
-          { follower: true, following: true } 
+        const user = await prisma.user.findFirst({
+          where: { id: followerId },
+          include: { 
+            photos: true, logins: true, 
+            comments:true, 
+            avatar: true, 
+            commentsLiked: { include: {comment: true} },
+            photosLiked:  { include: { photo: true} },
+            followedBy: { include: { following: {include: { avatar: true } } } },
+            following:  { include: { follower: {include: {avatar: true} } } }
+          }
         })
         
-        res.send(createdFollowerFull)
+        res.send(user)
 
       }
 
@@ -2249,25 +2381,40 @@ app.delete('/followers/:id', async (req, res) => {
     // check that they are signed in
     const user = await getUserFromToken(token)
     const followerMatch = await prisma.follows.findUnique( { where: {id: Number(idParam)} } )
+    
+    //@ts-ignore
+    const followerId = followerMatch.followerId
 
     //@ts-ignore
     const followerUserCheck = followerMatch.userId === user.id
 
     if (user && followerUserCheck) {
 
-      const photoLikeDeleted = await prisma.photoLike.delete({ 
+      await prisma.follows.delete({ 
         where: { id: Number(idParam) }
       })
 
-      const photoLikes = await prisma.photoLike.findMany( { where: { userId: user.id } } )
+      // const follows = await prisma.follows.findMany( { where: { userId: user.id } } )
 
-      // res.send(orderDeleted)
-      res.send(photoLikes)
+      const user = await prisma.user.findFirst({
+        where: { id: followerId },
+        include: { 
+          photos: true, logins: true, 
+          comments:true, 
+          avatar: true, 
+          commentsLiked: { include: {comment: true} },
+          photosLiked:  { include: { photo: true} },
+          followedBy: { include: { following: {include: { avatar: true } } } },
+          following:  { include: { follower: {include: {avatar: true} } } }
+        }
+      })
+
+      res.send(user)
 
     }
 
     else {
-      res.status(404).send({ error: 'photoLike not found, or the photoLike doesnt belong to that user to be deleted.' })
+      res.status(404).send({ error: 'followers not found, or the follower doesnt belong to that user to be deleted.' })
     }
 
   }
